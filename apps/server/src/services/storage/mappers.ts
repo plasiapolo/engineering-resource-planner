@@ -79,6 +79,7 @@ export function toApiTask(task: TaskWithRelations): ApiTask {
     projectCode: task.project.code,
     projectName: task.project.name,
     taskCode: task.taskCode,
+    name: task.name,
     codePart: codePartOf(task.taskCode),
     requiredSkill: task.requiredSkill,
     estimatedHours: task.estimatedHours,

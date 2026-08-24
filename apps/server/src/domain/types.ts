@@ -46,6 +46,7 @@ export interface ApiTask {
   projectCode: string;
   projectName: string;
   taskCode: string;
+  name: string;
   codePart: string;
   requiredSkill: SkillType;
   estimatedHours: number;

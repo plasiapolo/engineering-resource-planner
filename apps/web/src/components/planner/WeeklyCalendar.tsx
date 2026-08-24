@@ -273,6 +273,15 @@ function SpecialistRow({
         const planned = plannedFor(member.id, date);
         const unavailable = hours === 0;
         const dayEntries = entriesByDate.get(date) ?? [];
+        const mergedEntries: Array<{ entry: ApiPlanEntry; hours: number }> = [];
+        for (const entry of dayEntries) {
+          const existing = mergedEntries.find((m) => m.entry.taskId === entry.taskId);
+          if (existing) {
+            existing.hours += entry.hours;
+          } else {
+            mergedEntries.push({ entry, hours: entry.hours });
+          }
+        }
         const isToday = date === today;
         return (
           <DroppableCell
@@ -285,10 +294,10 @@ function SpecialistRow({
             availableLabel={unavailable ? "not available" : `${hours}h`}
             overloaded={planned > hours}
           >
-            {dayEntries.map((entry) => (
+            {mergedEntries.map(({ entry, hours }) => (
               <DraggableChip
                 key={entry.id}
-                entry={entry}
+                entry={{ ...entry, hours }}
                 codePart={rowCodePart(tasksById.get(entry.taskId)?.codePart ?? entry.taskCodePart, specialistCode)}
                 draggable={isPM && working && !unavailable}
                 onDelete={() => onDelete(entry)}

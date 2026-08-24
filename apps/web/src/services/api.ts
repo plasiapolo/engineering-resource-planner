@@ -138,10 +138,10 @@ export const api = {
   savePyramid: (projectId: string, rows: string[][]) =>
     request<{ ok: boolean }>(`/projects/${projectId}/pyramid`, { method: "PUT", body: JSON.stringify({ rows }) }),
 
-  createTask: (input: { projectId: string; requiredSkill: string; estimatedHours: number; taskDeadline?: DateString | null }) =>
+  createTask: (input: { projectId: string; name: string; requiredSkill: string; estimatedHours: number; taskDeadline?: DateString | null }) =>
     request<ApiTask>("/tasks", { method: "POST", body: JSON.stringify(input) }),
 
-  updateTask: (id: string, input: Partial<{ estimatedHours: number; taskDeadline: DateString | null; requiredSkill: string }>) =>
+  updateTask: (id: string, input: Partial<{ name: string; estimatedHours: number; taskDeadline: DateString | null; requiredSkill: string }>) =>
     request<ApiTask>(`/tasks/${id}`, { method: "PUT", body: JSON.stringify(input) }),
 
   deleteTask: (id: string) => request<{ ok: boolean }>(`/tasks/${id}`, { method: "DELETE" }),

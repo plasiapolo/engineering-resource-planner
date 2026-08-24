@@ -16,10 +16,11 @@ export function TaskFormModal({
   open: boolean;
   onClose: () => void;
   projectId: string;
-  task: { id: string; estimatedHours: number; taskDeadline: DateString | null; requiredSkill: SkillType; projectId: string } | null;
+  task: { id: string; name: string; estimatedHours: number; taskDeadline: DateString | null; requiredSkill: SkillType; projectId: string } | null;
 }) {
   const { data, createTask, updateTask } = useAppState();
   const [selectedProject, setSelectedProject] = useState(projectId ?? data?.projects[0]?.id ?? "");
+  const [name, setName] = useState(task?.name ?? "");
   const [requiredSkill, setRequiredSkill] = useState<SkillType>(task?.requiredSkill ?? "A");
   const [estimatedHours, setEstimatedHours] = useState(String(task?.estimatedHours ?? 40));
   const [taskDeadline, setTaskDeadline] = useState<DateString>(task?.taskDeadline ?? "");
@@ -33,6 +34,7 @@ export function TaskFormModal({
     try {
       if (task) {
         await updateTask(task.id, {
+          name,
           estimatedHours: Number(estimatedHours),
           requiredSkill,
           taskDeadline: taskDeadline || null,
@@ -43,6 +45,7 @@ export function TaskFormModal({
         }
         await createTask({
           projectId: selectedProject,
+          name,
           requiredSkill,
           estimatedHours: Number(estimatedHours),
           taskDeadline: taskDeadline || null,
@@ -70,6 +73,9 @@ export function TaskFormModal({
             </Select>
           </Field>
         ) : null}
+        <Field label="Task name" hint="Task name should include project phase">
+          <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Z1 Foundation - Phase 1" />
+        </Field>
         <Field label="Required skill (competence)">
           <Select value={requiredSkill} onChange={(e) => setRequiredSkill(e.target.value as SkillType)}>
             {Object.entries(SKILL_LABELS).map(([value, label]) => (

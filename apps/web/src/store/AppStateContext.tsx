@@ -31,8 +31,8 @@ export interface AppStateContextValue {
   updateProject: (id: string, input: Partial<{ name: string; deadline: DateString; budgetHours: number }>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   savePyramid: (projectId: string, rows: string[][]) => Promise<void>;
-  createTask: (input: { projectId: string; requiredSkill: string; estimatedHours: number; taskDeadline?: DateString | null }) => Promise<void>;
-  updateTask: (id: string, input: Partial<{ estimatedHours: number; taskDeadline: DateString | null; requiredSkill: string }>) => Promise<void>;
+  createTask: (input: { projectId: string; name: string; requiredSkill: string; estimatedHours: number; taskDeadline?: DateString | null }) => Promise<void>;
+  updateTask: (id: string, input: Partial<{ name: string; estimatedHours: number; taskDeadline: DateString | null; requiredSkill: string }>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   updateTaskStatus: (id: string, status: TaskStatus, actualWorkedHours?: number) => Promise<void>;
   assignTask: (taskId: string, assignments: Array<{ userId: string; date: DateString; hours: number }>) => Promise<void>;

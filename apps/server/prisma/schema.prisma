@@ -89,6 +89,7 @@ model Task {
   projectId         String
   project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
   taskCode          String
+  name              String             @default("")
   requiredSkill     SkillType
   estimatedHours    Int
   actualWorkedHours Int                @default(0)

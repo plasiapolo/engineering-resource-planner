@@ -81,6 +81,7 @@ interface UpdateProjectInput {
 
 interface CreateTaskInput {
   projectId: string;
+  name: string;
   requiredSkill: string;
   estimatedHours: number;
   taskDeadline?: DateString | null;
@@ -88,6 +89,7 @@ interface CreateTaskInput {
 }
 
 interface UpdateTaskInput {
+  name?: string;
   estimatedHours?: number;
   taskDeadline?: DateString | null;
   status?: TaskStatus;
@@ -291,6 +293,7 @@ export class StorageService {
       data: {
         projectId: project.id,
         taskCode: code,
+        name: input.name ?? "",
         requiredSkill: input.requiredSkill as never,
         estimatedHours: input.estimatedHours,
         taskDeadline: input.taskDeadline ? toDate(input.taskDeadline) : null,
@@ -309,6 +312,9 @@ export class StorageService {
   async updateTask(id: string, input: UpdateTaskInput, userId: string): Promise<ApiTask> {
     const task = await this.db.task.findUniqueOrThrow({ where: { id } });
     const data: Record<string, unknown> = {};
+    if (input.name !== undefined) {
+      data.name = input.name;
+    }
     if (input.estimatedHours !== undefined) {
       if (input.estimatedHours < 1) throw new Error("estimatedHours must be at least 1");
       data.estimatedHours = input.estimatedHours;
@@ -509,7 +515,7 @@ export class StorageService {
         if (target) {
           const updated = await this.db.planEntry.update({
             where: { id: target.id },
-            data: { hours: item.hours, locked: true },
+            data: { hours: target.hours + item.hours, locked: true },
           });
           created.push(updated);
         }

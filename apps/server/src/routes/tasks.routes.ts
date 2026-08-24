@@ -4,6 +4,7 @@ import type { AppContext } from "../app";
 
 const createTaskSchema = z.object({
   projectId: z.string().min(1),
+  name: z.string().max(200).optional().default(""),
   requiredSkill: z.enum(["A", "B", "C", "E", "P", "S"]),
   estimatedHours: z.number().int().min(1),
   taskDeadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
@@ -12,6 +13,7 @@ const createTaskSchema = z.object({
 
 const updateTaskSchema = z
   .object({
+    name: z.string().max(200).optional(),
     estimatedHours: z.number().int().min(1).optional(),
     taskDeadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
     requiredSkill: z.enum(["A", "B", "C", "E", "P", "S"]).optional(),

@@ -44,6 +44,7 @@ interface SeedTaskSpec {
   skill: SkillType;
   hours: number;
   row: number;
+  name?: string;
   status?: TaskStatus;
   taskDeadlineOffsetWorkdays?: number;
 }
@@ -159,6 +160,7 @@ export async function runSeed(db: PrismaClient): Promise<void> {
         data: {
           projectId: project.id,
           taskCode: code,
+          name: taskSpec.name ?? `Phase ${taskSpec.row + 1} - skill ${taskSpec.skill}`,
           requiredSkill: taskSpec.skill,
           estimatedHours: taskSpec.hours,
           rowIndex: taskSpec.row,

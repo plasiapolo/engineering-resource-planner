@@ -27,7 +27,7 @@ export function TasksPage() {
   const { data, deleteTask, removeAssignment } = useAppState();
   const [projectFilter, setProjectFilter] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<null | { id: string; estimatedHours: number; taskDeadline: string | null; requiredSkill: "A" | "B" | "C" | "E" | "P" | "S"; projectId: string }>(null);
+  const [editing, setEditing] = useState<null | { id: string; name: string; estimatedHours: number; taskDeadline: string | null; requiredSkill: "A" | "B" | "C" | "E" | "P" | "S"; projectId: string }>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<{ id: string; code: string } | null>(null);
   const [removing, setRemoving] = useState<Record<string, boolean>>({});
@@ -100,6 +100,8 @@ export function TasksPage() {
               );
             } },
             { key: "project", header: "Project", render: (t) => `${t.projectCode}` },
+            { key: "projectName", header: "Project name", render: (t) => <strong>{t.projectName}</strong> },
+            { key: "taskName", header: "Task name", render: (t) => (t.name ? <span>{t.name}</span> : <span className="muted">—</span>) },
             {
               key: "skill",
               header: "Skill",
@@ -113,7 +115,7 @@ export function TasksPage() {
             {
               key: "hoursAvailable",
               header: "Hours available",
-              render: (t) => `${t.estimatedHours}h`,
+              render: (t) => `${Math.max(0, t.estimatedHours - t.scheduledHours)}h`,
             },
             {
               key: "assigned",
@@ -168,6 +170,7 @@ export function TasksPage() {
                     onClick={() => {
                       setEditing({
                         id: t.id,
+                        name: t.name,
                         estimatedHours: t.estimatedHours,
                         taskDeadline: t.taskDeadline,
                         requiredSkill: t.requiredSkill,

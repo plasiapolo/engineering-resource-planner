@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { ApiTask, DateString } from "../../domain/types";
-import { isWorkingDay, parseDateString, warsawToday } from "../../utils/date";
+import type { ApiTask, ApiPlanEntry, DateString } from "../../domain/types";
+import { addDays, isWorkingDay, parseDateString, toDateString, warsawToday } from "../../utils/date";
 import { useAppState } from "../../store/AppStateContext";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -8,59 +8,59 @@ import { Badge } from "../ui/Badge";
 import { Alert } from "../ui/Alert";
 import styles from "./tasks.module.css";
 
-interface PendingDay {
-  date: DateString;
-  hours: number;
-}
-
 export function AssignmentEditor({ task, onClose }: { task: ApiTask; onClose: () => void }) {
-  const { data, assignTask, deletePlanEntry } = useAppState();
+  const { data, assignTask, updatePlanEntry, deletePlanEntry } = useAppState();
   const [checked, setChecked] = useState<Record<string, boolean>>({});
-  const [pending, setPending] = useState<Record<string, PendingDay[]>>({});
+  const [ranges, setRanges] = useState<Record<string, { start: string; end: string; hours: string }>>({});
+  const [editingEntry, setEditingEntry] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editHours, setEditHours] = useState("8");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const specialists = (data?.team ?? []).filter((m) => m.role === "SPECIALIST" && m.skill === task.requiredSkill);
   const existingEntries = (data?.planEntries ?? []).filter((e) => e.taskId === task.id);
+  const today = warsawToday();
 
   const toggle = (userId: string, value: boolean) => {
     setChecked((prev) => ({ ...prev, [userId]: value }));
-    if (value && !pending[userId]) {
-      setPending((prev) => ({ ...prev, [userId]: [{ date: warsawToday(), hours: 8 }] }));
+    if (value && !ranges[userId]) {
+      setRanges((prev) => ({ ...prev, [userId]: { start: today, end: today, hours: "8" } }));
     }
   };
 
-  const updatePending = (userId: string, index: number, field: keyof PendingDay, value: string | number) => {
-    setPending((prev) => {
-      const list = prev[userId] ?? [];
-      const next = list.map((item, i) => (i === index ? { ...item, [field]: value } : item));
-      return { ...prev, [userId]: next };
-    });
-  };
-
-  const addDay = (userId: string) => {
-    setPending((prev) => ({ ...prev, [userId]: [...(prev[userId] ?? []), { date: warsawToday(), hours: 8 }] }));
-  };
-
-  const removeDay = (userId: string, index: number) => {
-    setPending((prev) => ({ ...prev, [userId]: (prev[userId] ?? []).filter((_, i) => i !== index) }));
+  const updateRange = (userId: string, field: "start" | "end" | "hours", value: string) => {
+    setRanges((prev) => ({ ...prev, [userId]: { ...prev[userId], [field]: value } }));
   };
 
   const submit = async () => {
     const assignments: Array<{ userId: string; date: DateString; hours: number }> = [];
-    for (const userId of Object.keys(pending)) {
+    for (const userId of Object.keys(ranges)) {
       if (!checked[userId]) continue;
-      for (const item of pending[userId] ?? []) {
-        if (!item.date || !item.hours) continue;
-        if (!isWorkingDay(parseDateString(item.date))) {
-          setError(`Assignments are only allowed on working days (${item.date} is not a working day).`);
-          return;
+      const range = ranges[userId];
+      if (!range || !range.start || !range.end) {
+        setError("Enter both a start day and a last day for each selected specialist.");
+        return;
+      }
+      const hours = Number(range.hours);
+      if (!Number.isInteger(hours) || hours < 1 || hours > 8) {
+        setError("Hours per day must be between 1 and 8.");
+        return;
+      }
+      const start = parseDateString(range.start);
+      const end = parseDateString(range.end);
+      if (!start || !end || end < start) {
+        setError("Last day must be on or after the start day.");
+        return;
+      }
+      for (let d = start; d <= end; d = addDays(d, 1)) {
+        if (isWorkingDay(d)) {
+          assignments.push({ userId, date: toDateString(d), hours });
         }
-        assignments.push({ userId, date: item.date, hours: Math.min(8, Math.max(1, item.hours)) });
       }
     }
     if (assignments.length === 0) {
-      setError("Tick at least one specialist and enter a date and hours.");
+      setError("Tick at least one specialist and enter a start and last day.");
       return;
     }
     setBusy(true);
@@ -75,6 +75,41 @@ export function AssignmentEditor({ task, onClose }: { task: ApiTask; onClose: ()
     }
   };
 
+  const beginEdit = (entry: ApiPlanEntry) => {
+    setEditingEntry(entry.id);
+    setEditDate(entry.date);
+    setEditHours(String(entry.hours));
+    setError(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editingEntry) return;
+    const hours = Number(editHours);
+    if (!Number.isInteger(hours) || hours < 1 || hours > 8) {
+      setError("Hours must be between 1 and 8.");
+      return;
+    }
+    const parsed = parseDateString(editDate);
+    if (!parsed) {
+      setError("Enter a valid date.");
+      return;
+    }
+    if (!isWorkingDay(parsed)) {
+      setError(`${editDate} is not a working day.`);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await updatePlanEntry(editingEntry, { date: editDate, hours });
+      setEditingEntry(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Update failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className={styles.editor}>
       <div className="flex-between mb-16">
@@ -83,7 +118,7 @@ export function AssignmentEditor({ task, onClose }: { task: ApiTask; onClose: ()
             {task.codePart} <Badge tone="blue">{task.requiredSkill}</Badge>
           </strong>
           <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-            Remaining {task.remainingHours}h · Task number is internal and never displayed.
+            Remaining {task.remainingHours}h · Assign a start day and a last day; every working day in between is assigned.
           </p>
         </div>
         <Button size="sm" variant="ghost" onClick={onClose}>
@@ -98,11 +133,7 @@ export function AssignmentEditor({ task, onClose }: { task: ApiTask; onClose: ()
           {specialists.map((specialist) => (
             <div key={specialist.id} className={styles.specialistBlock}>
               <label className={styles.tickRow}>
-                <input
-                  type="checkbox"
-                  checked={!!checked[specialist.id]}
-                  onChange={(e) => toggle(specialist.id, e.target.checked)}
-                />
+                <input type="checkbox" checked={!!checked[specialist.id]} onChange={(e) => toggle(specialist.id, e.target.checked)} />
                 <span>
                   <strong>{specialist.displayName}</strong>
                   <span className="muted" style={{ fontSize: 12 }}>
@@ -113,28 +144,38 @@ export function AssignmentEditor({ task, onClose }: { task: ApiTask; onClose: ()
               </label>
               {checked[specialist.id] ? (
                 <div className={styles.dayRows}>
-                  {(pending[specialist.id] ?? []).map((item, index) => (
-                    <div key={index} className={styles.dayRow}>
-                      <Input
-                        type="date"
-                        value={item.date}
-                        onChange={(e) => updatePending(specialist.id, index, "date", e.target.value)}
-                      />
-                      <Input
-                        type="number"
-                        min={1}
-                        max={8}
-                        value={item.hours}
-                        onChange={(e) => updatePending(specialist.id, index, "hours", Number(e.target.value))}
-                      />
-                      <button className={styles.removeBtn} onClick={() => removeDay(specialist.id, index)}>
-                        &times;
-                      </button>
-                    </div>
-                  ))}
-                  <Button size="sm" variant="ghost" onClick={() => addDay(specialist.id)}>
-                    + Add day
-                  </Button>
+                  <div className={styles.dayRow}>
+                    <label className="muted" style={{ fontSize: 12 }}>
+                      Start day
+                    </label>
+                    <Input
+                      type="date"
+                      value={ranges[specialist.id]?.start ?? today}
+                      onChange={(e) => updateRange(specialist.id, "start", e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.dayRow}>
+                    <label className="muted" style={{ fontSize: 12 }}>
+                      Last day
+                    </label>
+                    <Input
+                      type="date"
+                      value={ranges[specialist.id]?.end ?? today}
+                      onChange={(e) => updateRange(specialist.id, "end", e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.dayRow}>
+                    <label className="muted" style={{ fontSize: 12 }}>
+                      Hours/day
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={8}
+                      value={ranges[specialist.id]?.hours ?? "8"}
+                      onChange={(e) => updateRange(specialist.id, "hours", e.target.value)}
+                    />
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -150,18 +191,31 @@ export function AssignmentEditor({ task, onClose }: { task: ApiTask; onClose: ()
           <div className={styles.existing}>
             {existingEntries.map((entry) => (
               <div key={entry.id} className={styles.existingRow}>
-                <span>
-                  {entry.date} · {entry.userName} · <strong>{entry.hours}h</strong>
-                  {entry.locked ? <Badge tone="blue">locked</Badge> : <Badge tone="orange">auto</Badge>}
-                </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-danger"
-                  onClick={() => void deletePlanEntry(entry.id)}
-                >
-                  Remove
-                </Button>
+                {editingEntry === entry.id ? (
+                  <div className={styles.dayRow}>
+                    <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+                    <Input type="number" min={1} max={8} value={editHours} onChange={(e) => setEditHours(e.target.value)} />
+                    <Button size="sm" variant="accent" onClick={() => void saveEdit()} disabled={busy}>
+                      Save
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditingEntry(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <span>
+                      {entry.date} · {entry.userName} · <strong>{entry.hours}h</strong>
+                      {entry.locked ? <Badge tone="blue">locked</Badge> : <Badge tone="orange">auto</Badge>}
+                    </span>
+                    <Button size="sm" variant="ghost" onClick={() => beginEdit(entry)}>
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-danger" onClick={() => void deletePlanEntry(entry.id)}>
+                      Remove
+                    </Button>
+                  </>
+                )}
               </div>
             ))}
           </div>

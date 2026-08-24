@@ -32,6 +32,7 @@ function DraggableTask({ task, codePart }: DraggableTaskProps) {
       className={`${styles.task} ${isDragging ? styles.taskDragging : ""}`}
     >
       <span className={styles.taskCode}>{codePart}</span>
+      {task.name ? <span className={styles.taskName}> ({task.name})</span> : null}
       <Badge tone="blue">{task.requiredSkill}</Badge>
       <span className={styles.taskHours}>{task.remainingHours}h</span>
     </div>

@@ -72,6 +72,15 @@
   font-weight: 600;
 }
 
+.taskName {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
 .taskHours {
   color: var(--color-text-muted);
   font-size: 12px;
