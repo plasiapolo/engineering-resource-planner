@@ -433,19 +433,67 @@
   position: relative;
   height: 100%;
   min-height: 28px;
-  background: linear-gradient(to right, var(--color-border) 1px, transparent 1px);
-  background-size: 8.3333% 100%;
+}
+
+.ganttTimelineHeader {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.ganttHeader .ganttLabelCol {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.ganttAxisLabel {
+  height: 18px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.ganttMonthRow {
+  position: relative;
+  height: 18px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 2px;
+}
+
+.ganttWeekRow {
+  position: relative;
+  height: 18px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 2px;
 }
 
 .ganttMonth {
   position: absolute;
   top: 0;
   height: 100%;
-  border-left: 1px solid var(--color-border);
+  border-left: 2px solid var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  white-space: nowrap;
+  padding-left: 4px;
+}
+
+.ganttWeek {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-left: 1px solid var(--color-border-strong, #c9cfd8);
   font-size: 11px;
   color: var(--color-text-muted);
   overflow: hidden;
   white-space: nowrap;
+  font-weight: 500;
+  text-align: center;
 }
 
 .ganttBar {

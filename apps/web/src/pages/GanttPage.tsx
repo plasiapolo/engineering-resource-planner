@@ -17,6 +17,14 @@ function dayDiff(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86400000);
 }
 
+function isoWeekNumber(d: Date): number {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
 export function GanttPage() {
   const { data } = useAppState();
 
@@ -52,16 +60,46 @@ export function GanttPage() {
 
   if (!data) return null;
 
+  const weeks = useMemo(() => {
+    if (!globalStart || !globalEnd) return [];
+    const out: Array<{ num: number; leftPct: number; widthPct: number }> = [];
+    const gs = parseDateString(globalStart);
+    const endDate = parseDateString(globalEnd);
+    let d = new Date(gs.getTime());
+    let currentWeek = isoWeekNumber(d);
+    let weekStart = new Date(d.getTime());
+    while (d <= endDate) {
+      const w = isoWeekNumber(d);
+      if (w !== currentWeek) {
+        const weekEnd = new Date(d.getTime() - 86400000);
+        out.push({
+          num: currentWeek,
+          leftPct: (dayDiff(gs, weekStart) / totalDays) * 100,
+          widthPct: ((dayDiff(weekStart, weekEnd) + 1) / totalDays) * 100,
+        });
+        currentWeek = w;
+        weekStart = new Date(d.getTime());
+      }
+      d = new Date(d.getTime() + 86400000);
+    }
+    out.push({
+      num: currentWeek,
+      leftPct: (dayDiff(gs, weekStart) / totalDays) * 100,
+      widthPct: ((dayDiff(weekStart, endDate) + 1) / totalDays) * 100,
+    });
+    return out;
+  }, [globalStart, globalEnd, totalDays]);
+
   const months = useMemo(() => {
     if (!globalStart || !globalEnd) return [];
     const out: Array<{ label: string; leftPct: number; widthPct: number }> = [];
-    let d = new Date(parseDateString(globalStart));
-    d = new Date(d.getFullYear(), d.getMonth(), 1);
+    const gs = parseDateString(globalStart);
+    let d = new Date(gs.getFullYear(), gs.getMonth(), 1);
     const endDate = parseDateString(globalEnd);
     while (d <= endDate) {
       const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
       const monthEnd = next > endDate ? endDate : new Date(next.getTime() - 86400000);
-      const left = dayDiff(parseDateString(globalStart), d);
+      const left = dayDiff(gs, d);
       const width = dayDiff(d, monthEnd) + 1;
       out.push({
         label: d.toLocaleDateString("en-GB", { month: "short", year: "2-digit" }),
@@ -90,13 +128,25 @@ export function GanttPage() {
               <CardHeader title={`${project.code} — ${project.name}`} subtitle={`${projectSpans.length} tasks`} />
               <div className={styles.gantt}>
                 <div className={styles.ganttHeader}>
-                  <div className={styles.ganttLabelCol}>Task</div>
-                  <div className={styles.ganttTimeline}>
-                    {months.map((m, i) => (
-                      <div key={i} className={styles.ganttMonth} style={{ left: `${m.leftPct}%`, width: `${m.widthPct}%` }}>
-                        {m.label}
-                      </div>
-                    ))}
+                  <div className={styles.ganttLabelCol}>
+                    <div className={styles.ganttAxisLabel}>Month</div>
+                    <div className={styles.ganttAxisLabel}>Week number</div>
+                  </div>
+                  <div className={styles.ganttTimelineHeader}>
+                    <div className={styles.ganttMonthRow}>
+                      {months.map((m, i) => (
+                        <div key={i} className={styles.ganttMonth} style={{ left: `${m.leftPct}%`, width: `${m.widthPct}%` }}>
+                          {m.label}
+                        </div>
+                      ))}
+                    </div>
+                    <div className={styles.ganttWeekRow}>
+                      {weeks.map((w, i) => (
+                        <div key={i} className={styles.ganttWeek} style={{ left: `${w.leftPct}%`, width: `${w.widthPct}%` }}>
+                          {w.num}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 {projectSpans.map(({ task, start, end }) => {
