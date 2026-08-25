@@ -5,13 +5,34 @@ import { StatCard } from "../components/ui/Extras";
 import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
 import { CONFLICT_SEVERITY_LABELS, CONFLICT_TYPE_LABELS } from "../domain/constants";
-import { formatDDMMYYYY } from "../utils/date";
+import { formatDDMMYYYY, warsawToday } from "../utils/date";
 import { scheduledHoursByProject } from "../utils/plan";
 import styles from "./pages.module.css";
 
 export function DashboardPage() {
   const { data, setView, generatePlan } = useAppState();
   if (!data) return null;
+
+  const today = warsawToday();
+  const projectById = new Map(data.projects.map((p) => [p.id, p]));
+  const taskById = new Map(data.tasks.map((t) => [t.id, t]));
+
+  const currentWorkOf = (userId: string): string => {
+    const availabilityRecord = data.availability.find((a) => a.userId === userId && a.date === today);
+    const unavailable = availabilityRecord !== undefined && availabilityRecord.availableHours === 0;
+    if (unavailable) return "unavailable";
+    const todayEntries = data.planEntries.filter((e) => e.userId === userId && e.date === today);
+    if (todayEntries.length === 0) return "free";
+    const projectNames = [
+      ...new Set(
+        todayEntries
+          .map((e) => taskById.get(e.taskId)?.projectId)
+          .map((pid) => (pid ? projectById.get(pid)?.name : undefined))
+          .filter(Boolean),
+      ),
+    ];
+    return projectNames.length > 0 ? projectNames.join(", ") : "free";
+  };
 
   const runGenerate = async () => {
     try {
@@ -135,6 +156,20 @@ export function DashboardPage() {
               columns={[
                 { key: "name", header: "Specialist", render: (m) => m.displayName },
                 { key: "skill", header: "Skill", render: (m) => <Badge tone="blue">{m.skill ?? "—"}</Badge> },
+                {
+                  key: "workingOn",
+                  header: "Currently working on",
+                  render: (m) => {
+                    const status = currentWorkOf(m.id);
+                    return status === "free" ? (
+                      <Badge tone="green">free</Badge>
+                    ) : status === "unavailable" ? (
+                      <Badge tone="gray">unavailable</Badge>
+                    ) : (
+                      <span>{status}</span>
+                    );
+                  },
+                },
                 { key: "planned", header: "Planned", render: (m) => `${m.plannedHours}h` },
                 { key: "avail3mo", header: "Available hours within 3 months", render: (m) => `${m.availableHoursNext3Months}h` },
               ]}

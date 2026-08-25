@@ -118,7 +118,7 @@ export function AssignmentEditor({ task, onClose }: { task: ApiTask; onClose: ()
             {task.codePart} <Badge tone="blue">{task.requiredSkill}</Badge>
           </strong>
           <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-            Remaining {task.remainingHours}h · Assign a start day and a last day; every working day in between is assigned.
+            Available hours: {Math.max(0, task.estimatedHours - task.scheduledHours)}h · Assign a start day and a last day; every working day in between is assigned.
           </p>
         </div>
         <Button size="sm" variant="ghost" onClick={onClose}>
