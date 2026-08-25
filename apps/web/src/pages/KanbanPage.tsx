@@ -29,7 +29,7 @@ const COLUMN_ORDER: Array<{ key: ColumnKey; title: string; status: TaskStatus }>
   { key: "done", title: "Done", status: "DONE" },
 ];
 
-function KanbanCard({ task, code, draggable }: { task: ApiTask; code: string; draggable: boolean }) {
+function KanbanCard({ task, code, hours, draggable }: { task: ApiTask; code: string; hours: number; draggable: boolean }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `${task.id}|${code}`,
     disabled: !draggable,
@@ -47,7 +47,7 @@ function KanbanCard({ task, code, draggable }: { task: ApiTask; code: string; dr
       </div>
       <div className={styles.kanbanCardMeta}>
         <Badge tone="blue">{task.requiredSkill}</Badge>
-        <span className="muted">{task.remainingHours}h</span>
+        <span className="muted">{hours}h assigned</span>
       </div>
     </div>
   );
@@ -60,7 +60,7 @@ function KanbanColumn({
   onOpen,
 }: {
   column: (typeof COLUMN_ORDER)[number];
-  cards: Array<{ task: ApiTask; code: string }>;
+  cards: Array<{ task: ApiTask; code: string; hours: number }>;
   draggableFor: (code: string) => boolean;
   onOpen: (task: ApiTask) => void;
 }) {
@@ -73,9 +73,9 @@ function KanbanColumn({
       </div>
       <div className={styles.kanbanColumnBody}>
         {cards.length === 0 ? <p className={styles.kanbanEmpty}>Drop tasks here</p> : null}
-        {cards.map(({ task, code }) => (
+        {cards.map(({ task, code, hours }) => (
           <div key={`${task.id}|${code}`} onClick={() => onOpen(task)}>
-            <KanbanCard task={task} code={code} draggable={draggableFor(code)} />
+            <KanbanCard task={task} code={code} hours={hours} draggable={draggableFor(code)} />
           </div>
         ))}
       </div>
@@ -107,6 +107,14 @@ export function KanbanPage() {
     const userSpec = codeToUser(code);
     if (!userSpec) return task.status;
     return task.statusByUser[userSpec.id] ?? task.status;
+  };
+
+  const assignedHoursOf = (task: ApiTask, code: string): number => {
+    const userSpec = codeToUser(code);
+    if (!userSpec) return 0;
+    return data.planEntries
+      .filter((e) => e.taskId === task.id && e.userId === userSpec.id)
+      .reduce((sum, e) => sum + e.hours, 0);
   };
 
   const draggableFor = (code: string) => {
@@ -158,7 +166,12 @@ export function KanbanPage() {
           data.projects.map((project) => {
             const projectTasks = data.tasks.filter((t) => t.projectId === project.id);
             const projectCards = projectTasks.flatMap((task) =>
-              taskCodesForSkill(task, specialists).map((code) => ({ task, code, status: statusOf(task, code) })),
+              taskCodesForSkill(task, specialists).map((code) => ({
+                task,
+                code,
+                status: statusOf(task, code),
+                hours: assignedHoursOf(task, code),
+              })),
             );
             return (
               <Card key={project.id} className="mb-16">
@@ -191,7 +204,6 @@ export function KanbanPage() {
               </div>
               <div className={styles.kanbanCardMeta}>
                 <Badge tone="blue">{active.requiredSkill}</Badge>
-                <span className="muted">{active.remainingHours}h</span>
               </div>
             </div>
           ) : null}
