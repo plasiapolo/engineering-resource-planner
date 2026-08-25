@@ -54,7 +54,9 @@ export function MyTasksPage() {
             { key: "code", header: "Task code", render: (t) => <span className={styles.taskCode}>{t.codePart}</span> },
             { key: "project", header: "Project", render: (t) => `${t.projectCode} — ${t.projectName}` },
             { key: "skill", header: "Skill", render: (t) => <Badge tone="blue">{t.requiredSkill}</Badge> },
-            { key: "hours", header: "Hours", render: (t) => `${t.remainingHours}h remaining / ${t.estimatedHours}h estimated` },
+            { key: "hoursEstimated", header: "Hours estimated", render: (t) => `${t.estimatedHours}h` },
+            { key: "hoursPlanned", header: "Hours planned", render: (t) => `${t.scheduledHours}h` },
+            { key: "hoursAvailable", header: "Hours available", render: (t) => `${Math.max(0, t.estimatedHours - t.scheduledHours)}h` },
             {
               key: "worked",
               header: "Worked",

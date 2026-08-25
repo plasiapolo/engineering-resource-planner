@@ -107,6 +107,7 @@ export function TasksPage() {
               header: "Skill",
               render: (t) => <Badge tone="blue">{t.requiredSkill}</Badge>,
             },
+            { key: "hoursEstimated", header: "Hours estimated", render: (t) => `${t.estimatedHours}h` },
             {
               key: "hoursPlanned",
               header: "Hours planned",

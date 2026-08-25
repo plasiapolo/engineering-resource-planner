@@ -47,6 +47,7 @@ export function ProjectsPage() {
             { key: "code", header: "Code", render: (p) => <span className={styles.taskCode}>{p.code}</span> },
             { key: "name", header: "Name", render: (p) => <strong>{p.name}</strong> },
             { key: "deadline", header: "Deadline", render: (p) => formatDDMMYYYY(p.deadline) },
+            { key: "budget", header: "Budget", render: (p) => `${p.budgetHours}h` },
             {
               key: "budgetPlanned",
               header: "Budget planned",
