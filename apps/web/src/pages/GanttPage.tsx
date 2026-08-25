@@ -102,7 +102,7 @@ export function GanttPage() {
       const left = dayDiff(gs, d);
       const width = dayDiff(d, monthEnd) + 1;
       out.push({
-        label: d.toLocaleDateString("en-GB", { month: "short", year: "2-digit" }),
+        label: d.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
         leftPct: (left / totalDays) * 100,
         widthPct: (width / totalDays) * 100,
       });
@@ -114,7 +114,7 @@ export function GanttPage() {
   return (
     <div>
       <p className="page-subtitle">
-        Gantt chart for all tasks across the whole project period ({globalStart} → {globalEnd}).
+        Gantt chart for all tasks across all the projects period ({globalStart} → {globalEnd}).
       </p>
       {data.projects.length === 0 ? (
         <Card>
