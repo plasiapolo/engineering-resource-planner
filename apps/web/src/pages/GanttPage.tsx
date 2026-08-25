@@ -7,10 +7,12 @@ import type { ApiTask, DateString } from "../domain/types";
 import { parseDateString, formatDDMMYYYY, warsawToday } from "../utils/date";
 import styles from "./pages.module.css";
 
-interface TaskSpan {
+interface GanttRow {
   task: ApiTask;
+  code: string;
   start: DateString;
   end: DateString;
+  assigned: boolean;
 }
 
 function dayDiff(a: Date, b: Date): number {
@@ -28,30 +30,42 @@ function isoWeekNumber(d: Date): number {
 export function GanttPage() {
   const { data } = useAppState();
 
-  const { spans, globalStart, globalEnd, totalDays } = useMemo(() => {
-    if (!data) return { spans: [], globalStart: "", globalEnd: "", totalDays: 0 };
+  const { rows, globalStart, globalEnd, totalDays } = useMemo(() => {
+    if (!data) return { rows: [], globalStart: "", globalEnd: "", totalDays: 0 };
 
-    const entryDates: Record<string, string[]> = {};
+    const specialists = data.team.filter((m) => m.role === "SPECIALIST");
+
+    const datesByTaskUser = new Map<string, string[]>();
     for (const e of data.planEntries) {
-      (entryDates[e.taskId] ??= []).push(e.date);
+      const key = `${e.taskId}|${e.userId}`;
+      const list = datesByTaskUser.get(key) ?? [];
+      list.push(e.date);
+      datesByTaskUser.set(key, list);
     }
 
-    const spans: TaskSpan[] = data.tasks.map((task) => {
-      const dates = (entryDates[task.id] ?? []).slice().sort();
-      const start = dates[0] ?? data.projects.find((p) => p.id === task.projectId)?.deadline ?? warsawToday();
-      const end = dates[dates.length - 1] ?? start;
-      return { task, start, end: end < start ? start : end };
-    });
+    const rows: GanttRow[] = [];
+    for (const task of data.tasks) {
+      const parts = task.codePart.split("-");
+      for (const spec of specialists.filter((s) => s.skill === task.requiredSkill)) {
+        const dates = (datesByTaskUser.get(`${task.id}|${spec.id}`) ?? []).slice().sort();
+        const assigned = dates.length > 0;
+        const start = dates[0] ?? data.projects.find((p) => p.id === task.projectId)?.deadline ?? warsawToday();
+        const end = dates[dates.length - 1] ?? start;
+        const code = parts.length >= 3 ? `${parts[0]}-${spec.login.toUpperCase()}-${parts[2]}` : task.codePart;
+        rows.push({ task, code, start, end, assigned });
+      }
+    }
 
     const deadlineDates = data.projects.map((p) => p.deadline);
-    const allDates = [...deadlineDates, ...spans.map((s) => s.start), ...spans.map((s) => s.end)].filter(Boolean);
-    if (allDates.length === 0) return { spans: [], globalStart: "", globalEnd: "", totalDays: 0 };
+    const assignedDates = rows.filter((r) => r.assigned).flatMap((r) => [r.start, r.end]);
+    const allDates = [...deadlineDates, ...assignedDates].filter(Boolean);
+    if (allDates.length === 0) return { rows, globalStart: "", globalEnd: "", totalDays: 0 };
 
     const sorted = allDates.slice().sort();
     const gs = sorted[0];
     const ge = sorted[sorted.length - 1];
     return {
-      spans,
+      rows,
       globalStart: gs,
       globalEnd: ge,
       totalDays: Math.max(1, dayDiff(parseDateString(gs), parseDateString(ge)) + 1),
@@ -122,10 +136,10 @@ export function GanttPage() {
         </Card>
       ) : (
         data.projects.map((project) => {
-          const projectSpans = spans.filter((s) => s.task.projectId === project.id);
+          const projectRows = rows.filter((r) => r.task.projectId === project.id);
           return (
             <Card key={project.id} className="mb-16">
-              <CardHeader title={`${project.code} — ${project.name}`} subtitle={`${projectSpans.length} tasks`} />
+              <CardHeader title={`${project.code} — ${project.name}`} subtitle={`${projectRows.length} specialist rows`} />
               <div className={styles.gantt}>
                 <div className={styles.ganttHeader}>
                   <div className={styles.ganttLabelCol}>
@@ -149,23 +163,28 @@ export function GanttPage() {
                     </div>
                   </div>
                 </div>
-                {projectSpans.map(({ task, start, end }) => {
+                {projectRows.map(({ task, code, start, end, assigned }) => {
                   const left = dayDiff(parseDateString(globalStart), parseDateString(start));
                   const width = Math.max(1, dayDiff(parseDateString(start), parseDateString(end)) + 1);
+                  const startPct = (left / totalDays) * 100;
+                  const widthPct = (width / totalDays) * 100;
                   return (
-                    <div key={task.id} className={styles.ganttRow}>
+                    <div key={`${task.id}|${code}`} className={styles.ganttRow}>
                       <div className={styles.ganttLabelCol}>
                         <span className={styles.kanbanCardCode}>
-                          {task.codePart} {task.name ? <span className="muted">({task.name})</span> : null}
+                          <span className={styles.kanbanCardCodeLine}>{code}</span>
+                          {task.name ? <span className="muted">({task.name})</span> : null}
                         </span>
                         <Badge tone="blue">{task.requiredSkill}</Badge>
                       </div>
                       <div className={styles.ganttTimeline}>
-                        <div
-                          className={styles.ganttBar}
-                          style={{ left: `${(left / totalDays) * 100}%`, width: `${(width / totalDays) * 100}%` }}
-                          title={`${formatDDMMYYYY(start)} → ${formatDDMMYYYY(end)}`}
-                        />
+                        {assigned ? (
+                          <div
+                            className={styles.ganttBar}
+                            style={{ left: `${startPct}%`, width: `${widthPct}%` }}
+                            title={`${code} · ${formatDDMMYYYY(start)} → ${formatDDMMYYYY(end)}`}
+                          />
+                        ) : null}
                       </div>
                     </div>
                   );

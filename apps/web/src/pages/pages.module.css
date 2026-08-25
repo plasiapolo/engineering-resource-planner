@@ -386,6 +386,10 @@
   margin-bottom: 6px;
 }
 
+.kanbanCardCodeLine {
+  display: block;
+}
+
 .kanbanCardMeta {
   display: flex;
   align-items: center;

@@ -26,6 +26,11 @@ const statusSchema = z.object({
   actualWorkedHours: z.number().int().min(0).optional(),
 });
 
+const userStatusSchema = z.object({
+  userId: z.string().min(1),
+  status: z.enum(["NOT_STARTED", "WORK_IN_PROGRESS", "DONE", "ON_HOLD"]),
+});
+
 const assignmentSchema = z.object({
   assignments: z
     .array(
@@ -99,6 +104,27 @@ export function registerTaskRoutes(app: FastifyInstance, ctx: AppContext): void 
         user.role,
         parsed.data.status,
         parsed.data.actualWorkedHours,
+      );
+      return reply.send(task);
+    } catch (err) {
+      return reply.code(400).send({ error: err instanceof Error ? err.message : "Invalid status change" });
+    }
+  });
+
+  app.put("/tasks/:id/status/user", async (request, reply) => {
+    const user = request.requireUser();
+    const { id } = request.params as { id: string };
+    const parsed = userStatusSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+    }
+    try {
+      const task = await ctx.storage.updateTaskUserStatus(
+        id,
+        parsed.data.userId,
+        parsed.data.status,
+        user.id,
+        user.role,
       );
       return reply.send(task);
     } catch (err) {

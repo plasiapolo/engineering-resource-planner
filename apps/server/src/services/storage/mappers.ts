@@ -20,6 +20,7 @@ type ProjectWithTasks = Project & { tasks: Task[] };
 type TaskWithRelations = Task & {
   project: Project;
   planEntries: Array<PlanEntry & { user: User }>;
+  taskUserStatuses?: Array<{ userId: string; status: Task["status"] }>;
 };
 type EntryWithRelations = PlanEntry & { task: Task; user: User };
 type ConflictWithRelations = Conflict & {
@@ -88,6 +89,7 @@ export function toApiTask(task: TaskWithRelations): ApiTask {
     status: task.status,
     taskDeadline: task.taskDeadline ? toDateString(task.taskDeadline) : null,
     rowIndex: task.rowIndex,
+    statusByUser: Object.fromEntries((task.taskUserStatuses ?? []).map((s) => [s.userId, s.status])),
     assignedUserIds: [...assignedMap.keys()],
     assignedUsers: [...assignedMap.values()],
     scheduledHours,

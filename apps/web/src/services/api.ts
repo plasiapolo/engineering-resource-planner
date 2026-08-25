@@ -152,6 +152,12 @@ export const api = {
       body: JSON.stringify({ status, ...(actualWorkedHours !== undefined ? { actualWorkedHours } : {}) }),
     }),
 
+  updateTaskUserStatus: (id: string, userId: string, status: TaskStatus) =>
+    request<ApiTask>(`/tasks/${id}/status/user`, {
+      method: "PUT",
+      body: JSON.stringify({ userId, status }),
+    }),
+
   assignTask: (taskId: string, assignments: Array<{ userId: string; date: DateString; hours: number }>) =>
     request<ApiPlanEntry[]>(`/tasks/${taskId}/assignments`, {
       method: "POST",

@@ -126,6 +126,7 @@ export class StorageService {
           include: {
             project: true,
             planEntries: { where: { deletedAt: null }, include: { user: true } },
+            taskUserStatuses: true,
           },
           orderBy: { createdAt: "asc" },
         }),
@@ -302,6 +303,7 @@ export class StorageService {
       include: {
         project: true,
         planEntries: { where: { deletedAt: null }, include: { user: true } },
+            taskUserStatuses: true,
       },
     });
     await this.recomputeConflicts();
@@ -340,6 +342,7 @@ export class StorageService {
       include: {
         project: true,
         planEntries: { where: { deletedAt: null }, include: { user: true } },
+            taskUserStatuses: true,
       },
     });
     await this.recomputeConflicts();
@@ -372,7 +375,7 @@ export class StorageService {
   ): Promise<ApiTask> {
     const task = await this.db.task.findUniqueOrThrow({
       where: { id },
-      include: { project: true, planEntries: { where: { deletedAt: null }, include: { user: true } } },
+      include: { project: true, planEntries: { where: { deletedAt: null }, include: { user: true } }, taskUserStatuses: true },
     });
 
     if (role !== "PROJECT_MANAGER") {
@@ -400,12 +403,52 @@ export class StorageService {
       include: {
         project: true,
         planEntries: { where: { deletedAt: null }, include: { user: true } },
+            taskUserStatuses: true,
       },
     });
     await this.recomputeConflicts();
     await this.captureVersion();
     await this.audit(userId, "TASK", task.id, `STATUS_${task.status}_TO_${status}`);
     return toApiTask(updated);
+  }
+
+  async updateTaskUserStatus(
+    taskId: string,
+    targetUserId: string,
+    status: TaskStatus,
+    actorId: string,
+    actorRole: Role,
+  ): Promise<ApiTask> {
+    const task = await this.db.task.findUniqueOrThrow({
+      where: { id: taskId },
+      include: { project: true, planEntries: { where: { deletedAt: null }, include: { user: true } }, taskUserStatuses: true },
+    });
+
+    const isAssigned = task.planEntries.some((e) => e.userId === targetUserId);
+    if (actorRole !== "PROJECT_MANAGER" && (actorId !== targetUserId || !isAssigned)) {
+      throw new Error("A specialist may only update the status of their own assigned task.");
+    }
+
+    const check = checkStatusTransition(task.taskUserStatuses.find((s) => s.userId === targetUserId)?.status ?? "NOT_STARTED", status, actorRole);
+    if (!check.allowed) {
+      throw new Error(check.reason ?? "Invalid status transition.");
+    }
+
+    await this.db.taskUserStatus.upsert({
+      where: { taskId_userId: { taskId, userId: targetUserId } },
+      create: { taskId, userId: targetUserId, status },
+      update: { status },
+    });
+
+    return this.loadTask(taskId);
+  }
+
+  private async loadTask(taskId: string): Promise<ApiTask> {
+    const task = await this.db.task.findUniqueOrThrow({
+      where: { id: taskId },
+      include: { project: true, planEntries: { where: { deletedAt: null }, include: { user: true } }, taskUserStatuses: true },
+    });
+    return toApiTask(task);
   }
 
   // ---------------------------------------------------------------
@@ -520,6 +563,14 @@ export class StorageService {
           created.push(updated);
         }
       }
+    }
+
+    for (const assignment of assignments) {
+      await this.db.taskUserStatus.upsert({
+        where: { taskId_userId: { taskId, userId: assignment.userId } },
+        create: { taskId, userId: assignment.userId, status: "NOT_STARTED" },
+        update: {},
+      });
     }
 
     await this.updateTaskCodeForAssignment(taskId, assignments[0]?.userId);

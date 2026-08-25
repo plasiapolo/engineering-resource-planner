@@ -231,6 +231,26 @@ export async function runSeed(db: PrismaClient): Promise<void> {
     locked(z3A, "a2", D2, 8),
   ]);
 
+  // Per-specialist task status rows for every assigned (task, user) combination.
+  const statusSpecs: Array<[string, string, "NOT_STARTED" | "WORK_IN_PROGRESS" | "DONE" | "ON_HOLD"]> = [
+    [z1P, "p1", "WORK_IN_PROGRESS"],
+    [z1P, "p2", "NOT_STARTED"],
+    [z1A, "a1", "WORK_IN_PROGRESS"],
+    [z2A, "a2", "WORK_IN_PROGRESS"],
+    [z2S, "s1", "WORK_IN_PROGRESS"],
+    [z2C, "c1", "NOT_STARTED"],
+    [z3A, "a2", "WORK_IN_PROGRESS"],
+  ];
+  await Promise.all(
+    statusSpecs.map(([taskId, login, status]) =>
+      db.taskUserStatus.upsert({
+        where: { taskId_userId: { taskId, userId: userByLogin.get(login)! } },
+        create: { taskId, userId: userByLogin.get(login)!, status },
+        update: { status },
+      }),
+    ),
+  );
+
   // Availability restrictions (limited availability / unavailability examples)
   const blockDates = (login: string, from: string, count: number, hours: number): Promise<unknown> => {
     const creates: Promise<unknown>[] = [];

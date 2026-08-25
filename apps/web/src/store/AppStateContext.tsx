@@ -35,6 +35,7 @@ export interface AppStateContextValue {
   updateTask: (id: string, input: Partial<{ name: string; estimatedHours: number; taskDeadline: DateString | null; requiredSkill: string }>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   updateTaskStatus: (id: string, status: TaskStatus, actualWorkedHours?: number) => Promise<void>;
+  updateTaskUserStatus: (id: string, userId: string, status: TaskStatus) => Promise<void>;
   assignTask: (taskId: string, assignments: Array<{ userId: string; date: DateString; hours: number }>) => Promise<void>;
   removeAssignment: (taskId: string, userId: string) => Promise<void>;
   updatePlanEntry: (id: string, input: { userId?: string; date?: DateString; hours?: number }) => Promise<void>;
@@ -143,6 +144,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       updateTask: (id, input) => run(() => api.updateTask(id, input)),
       deleteTask: (id) => run(() => api.deleteTask(id)),
       updateTaskStatus: (id, status, actualWorkedHours) => run(() => api.updateTaskStatus(id, status, actualWorkedHours)),
+      updateTaskUserStatus: (id, userId, status) => run(() => api.updateTaskUserStatus(id, userId, status)),
       assignTask: (taskId, assignments) => run(() => api.assignTask(taskId, assignments)),
       removeAssignment: (taskId, userId) => run(() => api.removeAssignment(taskId, userId)),
       updatePlanEntry: (id, input) => run(() => api.updatePlanEntry(id, input)),

@@ -9,19 +9,8 @@ import { EmptyState, ConfirmDialog } from "../components/ui/Extras";
 import { TaskFormModal } from "../components/tasks/TaskFormModal";
 import { AssignmentEditor } from "../components/tasks/AssignmentEditor";
 import { TASK_STATUS_LABELS } from "../domain/constants";
-import type { ApiTask } from "../domain/types";
+import { taskCodesOf } from "../utils/taskCodes";
 import styles from "./pages.module.css";
-
-function taskCodesOf(task: ApiTask): string[] {
-  const parts = task.codePart.split("-");
-  if (parts.length < 3) return [task.codePart];
-  if (task.assignedUsers.length === 0) return [task.codePart];
-  return task.assignedUsers.map((u) => {
-    const p = [...parts];
-    p[1] = u.login.toUpperCase();
-    return p.join("-");
-  });
-}
 
 export function TasksPage() {
   const { data, deleteTask, removeAssignment } = useAppState();
