@@ -73,6 +73,43 @@ describe("detectConflicts", () => {
     expect(conflicts.filter((c) => c.type === "UNUSED_BUDGET")).toHaveLength(0);
   });
 
+  it("reports a project schedule not satisfied warning when no specialist is assigned", () => {
+    const conflicts = detectConflicts(
+      makeInput({
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 100 }],
+        tasks: [task("t1", { estimatedHours: 80, remainingHours: 80 })],
+        entries: [],
+      }),
+    );
+    expect(
+      conflicts.some((c) => c.type === "PROJECT_SCHEDULE_NOT_SATISFIED" && c.severity === "WARNING"),
+    ).toBe(true);
+  });
+
+  it("reports project schedule not satisfied when the plan ends before 3 working days before the deadline", () => {
+    const conflicts = detectConflicts(
+      makeInput({
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-10-07", budgetHours: 100 }],
+        tasks: [task("t1", { estimatedHours: 80, remainingHours: 80 })],
+        entries: [{ taskId: "t1", userId: "u1", date: "2026-09-30", hours: 80 }],
+      }),
+    );
+    expect(
+      conflicts.some((c) => c.type === "PROJECT_SCHEDULE_NOT_SATISFIED"),
+    ).toBe(true);
+  });
+
+  it("does not report project schedule not satisfied when the plan reaches 3 working days before the deadline", () => {
+    const conflicts = detectConflicts(
+      makeInput({
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-10-07", budgetHours: 100 }],
+        tasks: [task("t1", { estimatedHours: 80, remainingHours: 80 })],
+        entries: [{ taskId: "t1", userId: "u1", date: "2026-10-02", hours: 80 }],
+      }),
+    );
+    expect(conflicts.filter((c) => c.type === "PROJECT_SCHEDULE_NOT_SATISFIED")).toHaveLength(0);
+  });
+
   it("reports deadline risk as WARNING when there is time", () => {
     const conflicts = detectConflicts(
       makeInput({
@@ -204,7 +241,7 @@ describe("detectConflicts", () => {
   it("does not flag completed tasks", () => {
     const conflicts = detectConflicts(
       makeInput({
-        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 80 }],
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-09-04", budgetHours: 80 }],
         tasks: [task("t1", { estimatedHours: 80, remainingHours: 0, status: "DONE" })],
         entries: [{ taskId: "t1", userId: "u1", date: "2026-09-01", hours: 80 }],
       }),

@@ -6,6 +6,7 @@ import {
   isWorkingDay,
   lastWorkingDayBefore,
   nextWorkingDayAfter,
+  previousWorkingDayBefore,
   workingDayDistance,
 } from "../calendar/polishCalendar";
 
@@ -128,6 +129,28 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
         type: "UNUSED_BUDGET",
         title: "Unused budget",
         description: `Project ${project.name} uses ${planned}h of its ${project.budgetHours}h budget; ${project.budgetHours - planned}h remain unused.`,
+        severity: "WARNING",
+        projectId: project.id,
+        taskId: null,
+        employeeId: null,
+      });
+    }
+  }
+
+  // 1c. Project schedule not satisfied: no specialists are assigned up to
+  // 3 working days before the project deadline.
+  for (const project of projects) {
+    const projectEntries = entries.filter((e) => taskById.get(e.taskId)?.projectId === project.id);
+    const lastDate = projectEntries.map((e) => e.date).sort().pop();
+    let horizon = project.deadline;
+    for (let i = 0; i < 3; i += 1) horizon = previousWorkingDayBefore(horizon);
+    if (!lastDate || compareDates(lastDate, horizon) < 0) {
+      conflicts.push({
+        type: "PROJECT_SCHEDULE_NOT_SATISFIED",
+        title: "Project schedule not satisfied",
+        description: lastDate
+          ? `Project ${project.name} is planned until ${lastDate}, before ${horizon} (3 working days before the deadline ${project.deadline}).`
+          : `No specialists are assigned to project ${project.name}.`,
         severity: "WARNING",
         projectId: project.id,
         taskId: null,

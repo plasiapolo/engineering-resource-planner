@@ -6,6 +6,7 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { Modal } from "../components/ui/Modal";
 import { ConfirmDialog, EmptyState, Spinner } from "../components/ui/Extras";
+import { Alert } from "../components/ui/Alert";
 import { api } from "../services/api";
 import type { ApiVersionDetail } from "../domain/types";
 import { CONFLICT_SEVERITY_LABELS, CONFLICT_TYPE_LABELS } from "../domain/constants";
@@ -16,6 +17,7 @@ export function VersionsPage() {
   const { data, resetDatabase, wipeAll } = useAppState();
   const [selected, setSelected] = useState<ApiVersionDetail | null>(null);
   const [loadingVersion, setLoadingVersion] = useState(false);
+  const [versionError, setVersionError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
 
@@ -23,9 +25,13 @@ export function VersionsPage() {
 
   const openVersion = async (id: string) => {
     setLoadingVersion(true);
+    setVersionError(null);
+    setSelected(null);
     try {
       const detail = await api.getVersion(id);
       setSelected(detail);
+    } catch (err) {
+      setVersionError(err instanceof Error ? err.message : "Failed to load snapshot");
     } finally {
       setLoadingVersion(false);
     }
@@ -130,9 +136,19 @@ export function VersionsPage() {
         />
       </Card>
 
-      <Modal open={selected !== null || loadingVersion} onClose={() => setSelected(null)} title="Plan snapshot" wide>
+      <Modal
+        open={selected !== null || loadingVersion || versionError !== null}
+        onClose={() => {
+          setSelected(null);
+          setVersionError(null);
+        }}
+        title="Plan snapshot"
+        wide
+      >
         {loadingVersion ? (
           <Spinner label="Loading snapshot…" />
+        ) : versionError ? (
+          <Alert tone="danger">{versionError}</Alert>
         ) : selected ? (
           <div className="print-area">
             <div className="flex-between mb-16">
