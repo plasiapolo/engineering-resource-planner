@@ -10,6 +10,7 @@ import styles from "./pages.module.css";
 interface GanttDayBox {
   date: DateString;
   hours: number;
+  locked: boolean;
 }
 
 interface GanttRow {
@@ -38,11 +39,11 @@ export function GanttPage() {
 
     const specialists = data.team.filter((m) => m.role === "SPECIALIST");
 
-    const entriesByTaskUser = new Map<string, Array<{ date: string; hours: number }>>();
+    const entriesByTaskUser = new Map<string, Array<{ date: string; hours: number; locked: boolean }>>();
     for (const e of data.planEntries) {
       const key = `${e.taskId}|${e.userId}`;
       const list = entriesByTaskUser.get(key) ?? [];
-      list.push({ date: e.date, hours: e.hours });
+      list.push({ date: e.date, hours: e.hours, locked: e.locked });
       entriesByTaskUser.set(key, list);
     }
 
@@ -180,13 +181,13 @@ export function GanttPage() {
                           return (
                             <div
                               key={`${task.id}|${code}|${d.date}`}
-                              className={styles.ganttBar}
+                              className={`${styles.ganttBar} ${d.locked ? styles.ganttBarLocked : styles.ganttBarAuto}`}
                               style={{
                                 left: `${(left / totalDays) * 100}%`,
                                 width: `${(1 / totalDays) * 100}%`,
                                 height,
                               }}
-                              title={`${code} · ${formatDDMMYYYY(d.date)} · ${d.hours}h`}
+                              title={`${code} · ${formatDDMMYYYY(d.date)} · ${d.hours}h · ${d.locked ? "manual" : "auto"}`}
                             />
                           );
                         })}

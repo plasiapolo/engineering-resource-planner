@@ -44,6 +44,7 @@ export function ConfirmDialog({
   onCancel: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   if (!open) return null;
   return (
     <div className={styles.modalOverlay} onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
@@ -53,10 +54,18 @@ export function ConfirmDialog({
         </div>
         <div className={styles.modalBody}>
           <p>{message}</p>
+          {error ? (
+            <p className={styles.confirmError} role="alert">
+              {error}
+            </p>
+          ) : null}
           <div className={styles.modalActions}>
             <button
               className={`${styles.button} ${styles.secondary}`}
-              onClick={onCancel}
+              onClick={() => {
+                setError(null);
+                onCancel();
+              }}
               disabled={busy}
             >
               Cancel
@@ -65,8 +74,11 @@ export function ConfirmDialog({
               className={`${styles.button} ${styles.danger}`}
               onClick={async () => {
                 setBusy(true);
+                setError(null);
                 try {
                   await onConfirm();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Action failed");
                 } finally {
                   setBusy(false);
                 }

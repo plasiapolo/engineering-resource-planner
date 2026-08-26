@@ -293,6 +293,15 @@
   margin-top: 16px;
 }
 
+.confirmError {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
 .spinnerWrap {
   display: flex;
   flex-direction: column;

@@ -504,7 +504,13 @@
   position: absolute;
   top: 6px;
   height: 16px;
-  background: var(--color-primary);
   border-radius: 4px;
-  opacity: 0.85;
+}
+
+.ganttBarLocked {
+  background: var(--color-accent);
+}
+
+.ganttBarAuto {
+  background: var(--color-primary);
 }

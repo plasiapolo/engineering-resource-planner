@@ -133,11 +133,11 @@
 }
 
 .chipLocked {
-  border-left: 3px solid var(--color-primary);
+  border-left: 3px solid var(--color-accent);
 }
 
 .chipAuto {
-  border-left: 3px solid var(--color-accent);
+  border-left: 3px solid var(--color-primary);
 }
 
 .chipReadonly {
