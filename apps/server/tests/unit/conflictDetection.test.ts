@@ -51,6 +51,28 @@ describe("detectConflicts", () => {
     expect(conflicts.filter((c) => c.type === "PROJECT_BUDGET")).toHaveLength(0);
   });
 
+  it("reports an unused budget conflict when planned hours are below the budget", () => {
+    const conflicts = detectConflicts(
+      makeInput({
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 100 }],
+        tasks: [task("t1", { estimatedHours: 80, remainingHours: 80 })],
+        entries: [{ taskId: "t1", userId: "u1", date: "2026-09-01", hours: 60 }],
+      }),
+    );
+    expect(conflicts.some((c) => c.type === "UNUSED_BUDGET")).toBe(true);
+  });
+
+  it("does not report unused budget when the plan uses the whole budget", () => {
+    const conflicts = detectConflicts(
+      makeInput({
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 100 }],
+        tasks: [task("t1", { estimatedHours: 100, remainingHours: 100 })],
+        entries: [{ taskId: "t1", userId: "u1", date: "2026-09-01", hours: 100 }],
+      }),
+    );
+    expect(conflicts.filter((c) => c.type === "UNUSED_BUDGET")).toHaveLength(0);
+  });
+
   it("reports deadline risk as WARNING when there is time", () => {
     const conflicts = detectConflicts(
       makeInput({
@@ -182,8 +204,9 @@ describe("detectConflicts", () => {
   it("does not flag completed tasks", () => {
     const conflicts = detectConflicts(
       makeInput({
-        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 100 }],
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 80 }],
         tasks: [task("t1", { estimatedHours: 80, remainingHours: 0, status: "DONE" })],
+        entries: [{ taskId: "t1", userId: "u1", date: "2026-09-01", hours: 80 }],
       }),
     );
     expect(conflicts).toHaveLength(0);

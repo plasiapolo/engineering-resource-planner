@@ -118,6 +118,24 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
     }
   }
 
+  // 1b. Unused budget: if the plan does not use the whole project budget it is a conflict.
+  for (const project of projects) {
+    const planned = entries
+      .filter((e) => taskById.get(e.taskId)?.projectId === project.id)
+      .reduce((sum, e) => sum + e.hours, 0);
+    if (planned < project.budgetHours) {
+      conflicts.push({
+        type: "UNUSED_BUDGET",
+        title: "Unused budget",
+        description: `Project ${project.name} uses ${planned}h of its ${project.budgetHours}h budget; ${project.budgetHours - planned}h remain unused.`,
+        severity: "WARNING",
+        projectId: project.id,
+        taskId: null,
+        employeeId: null,
+      });
+    }
+  }
+
   // 2. Project deadline
   for (const project of projects) {
     const projectTasks = tasks.filter((t) => t.projectId === project.id);

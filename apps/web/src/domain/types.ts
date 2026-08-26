@@ -9,6 +9,7 @@ export type ConflictSeverity = "INFO" | "WARNING" | "ERROR" | "CRITICAL";
 export type ConflictType =
   | "PROJECT_DEADLINE"
   | "PROJECT_BUDGET"
+  | "UNUSED_BUDGET"
   | "NO_AVAILABLE_EMPLOYEE"
   | "DEPENDENCY_VIOLATION"
   | "EMPLOYEE_OVERLOAD"

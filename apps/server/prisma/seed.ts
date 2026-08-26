@@ -110,14 +110,14 @@ const SEED_PROJECTS: SeedProjectSpec[] = [
   {
     code: "Z4",
     name: "Z4 Testing Plant",
-    deadlineOffsetWorkdays: 60,
+    deadlineOffsetWorkdays: 110,
     budgetHours: 400,
     tasks: [
-      { skill: "P", hours: 60, row: 0, name: "CD-P" },
-      { skill: "A", hours: 50, row: 0, name: "CD-A" },
-      { skill: "S", hours: 60, row: 1, name: "BD-S" },
-      { skill: "E", hours: 40, row: 2, name: "DD-E" },
-      { skill: "C", hours: 40, row: 2, name: "DD-C" },
+      { skill: "P", hours: 96, row: 0, name: "CD-P" },
+      { skill: "A", hours: 80, row: 0, name: "CD-A" },
+      { skill: "S", hours: 96, row: 1, name: "BD-S" },
+      { skill: "E", hours: 64, row: 2, name: "DD-E" },
+      { skill: "C", hours: 64, row: 2, name: "DD-C" },
     ],
   },
 ];

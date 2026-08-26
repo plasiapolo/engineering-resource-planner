@@ -44,6 +44,7 @@ export const CONFLICT_SEVERITY_LABELS = {
 export const CONFLICT_TYPE_LABELS: Record<string, string> = {
   PROJECT_DEADLINE: "Project deadline",
   PROJECT_BUDGET: "Project budget",
+  UNUSED_BUDGET: "Unused budget",
   NO_AVAILABLE_EMPLOYEE: "No available employee",
   DEPENDENCY_VIOLATION: "Dependency violation",
   EMPLOYEE_OVERLOAD: "Employee overload",
