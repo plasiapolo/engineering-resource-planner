@@ -4,15 +4,18 @@ import { Card, CardHeader } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/Extras";
 import type { ApiTask, DateString } from "../domain/types";
-import { parseDateString, formatDDMMYYYY, warsawToday } from "../utils/date";
+import { parseDateString, formatDDMMYYYY } from "../utils/date";
 import styles from "./pages.module.css";
+
+interface GanttDayBox {
+  date: DateString;
+  hours: number;
+}
 
 interface GanttRow {
   task: ApiTask;
   code: string;
-  start: DateString;
-  end: DateString;
-  assigned: boolean;
+  days: GanttDayBox[];
 }
 
 function dayDiff(a: Date, b: Date): number {
@@ -35,29 +38,26 @@ export function GanttPage() {
 
     const specialists = data.team.filter((m) => m.role === "SPECIALIST");
 
-    const datesByTaskUser = new Map<string, string[]>();
+    const entriesByTaskUser = new Map<string, Array<{ date: string; hours: number }>>();
     for (const e of data.planEntries) {
       const key = `${e.taskId}|${e.userId}`;
-      const list = datesByTaskUser.get(key) ?? [];
-      list.push(e.date);
-      datesByTaskUser.set(key, list);
+      const list = entriesByTaskUser.get(key) ?? [];
+      list.push({ date: e.date, hours: e.hours });
+      entriesByTaskUser.set(key, list);
     }
 
     const rows: GanttRow[] = [];
     for (const task of data.tasks) {
       const parts = task.codePart.split("-");
       for (const spec of specialists.filter((s) => s.skill === task.requiredSkill)) {
-        const dates = (datesByTaskUser.get(`${task.id}|${spec.id}`) ?? []).slice().sort();
-        const assigned = dates.length > 0;
-        const start = dates[0] ?? data.projects.find((p) => p.id === task.projectId)?.deadline ?? warsawToday();
-        const end = dates[dates.length - 1] ?? start;
+        const days = (entriesByTaskUser.get(`${task.id}|${spec.id}`) ?? []).slice().sort((a, b) => a.date.localeCompare(b.date));
         const code = parts.length >= 3 ? `${parts[0]}-${spec.login.toUpperCase()}-${parts[2]}` : task.codePart;
-        rows.push({ task, code, start, end, assigned });
+        rows.push({ task, code, days });
       }
     }
 
     const deadlineDates = data.projects.map((p) => p.deadline);
-    const assignedDates = rows.filter((r) => r.assigned).flatMap((r) => [r.start, r.end]);
+    const assignedDates = rows.flatMap((r) => r.days.map((d) => d.date));
     const allDates = [...deadlineDates, ...assignedDates].filter(Boolean);
     if (allDates.length === 0) return { rows, globalStart: "", globalEnd: "", totalDays: 0 };
 
@@ -163,11 +163,7 @@ export function GanttPage() {
                     </div>
                   </div>
                 </div>
-                {projectRows.map(({ task, code, start, end, assigned }) => {
-                  const left = dayDiff(parseDateString(globalStart), parseDateString(start));
-                  const width = Math.max(1, dayDiff(parseDateString(start), parseDateString(end)) + 1);
-                  const startPct = (left / totalDays) * 100;
-                  const widthPct = (width / totalDays) * 100;
+                {projectRows.map(({ task, code, days }) => {
                   return (
                     <div key={`${task.id}|${code}`} className={styles.ganttRow}>
                       <div className={styles.ganttLabelCol}>
@@ -178,13 +174,22 @@ export function GanttPage() {
                         <Badge tone="blue">{task.requiredSkill}</Badge>
                       </div>
                       <div className={styles.ganttTimeline}>
-                        {assigned ? (
-                          <div
-                            className={styles.ganttBar}
-                            style={{ left: `${startPct}%`, width: `${widthPct}%` }}
-                            title={`${code} · ${formatDDMMYYYY(start)} → ${formatDDMMYYYY(end)}`}
-                          />
-                        ) : null}
+                        {days.map((d) => {
+                          const left = dayDiff(parseDateString(globalStart), parseDateString(d.date));
+                          const height = Math.round(6 + d.hours * 3);
+                          return (
+                            <div
+                              key={`${task.id}|${code}|${d.date}`}
+                              className={styles.ganttBar}
+                              style={{
+                                left: `${(left / totalDays) * 100}%`,
+                                width: `${(1 / totalDays) * 100}%`,
+                                height,
+                              }}
+                              title={`${code} · ${formatDDMMYYYY(d.date)} · ${d.hours}h`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   );

@@ -107,7 +107,11 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    await api.logout();
+    try {
+      await api.logout();
+    } catch {
+      // Always sign out locally even if the server request fails.
+    }
     setData(null);
   }, []);
 

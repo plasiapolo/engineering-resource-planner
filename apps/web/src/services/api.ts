@@ -113,7 +113,7 @@ export const api = {
   login: (login: string, password: string) =>
     request<LoginResponse>("/auth/login", { method: "POST", body: JSON.stringify({ login, password }) }),
 
-  logout: () => request<{ ok: boolean }>("/auth/logout", { method: "POST" }),
+  logout: () => request<{ ok: boolean }>("/auth/logout", { method: "POST", body: JSON.stringify({}) }),
 
   me: () => request<{ user: ApiUser }>("/auth/me"),
 
