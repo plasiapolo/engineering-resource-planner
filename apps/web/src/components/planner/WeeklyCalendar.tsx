@@ -146,7 +146,7 @@ export function WeeklyCalendar({ isPM }: { isPM: boolean }) {
           </Button>
           <span className="muted" style={{ fontSize: 12 }}>
             {isPM
-              ? "Drag tasks between specialists with the same competence. Locked entries (blue edge) are manual; auto entries (orange edge) are generated."
+              ? "Drag tasks between specialists with the same competence. Locked entries (orange edge) are manual; auto entries (blue edge) are generated."
               : "Read-only weekly view of your assigned tasks."}
           </span>
         </div>

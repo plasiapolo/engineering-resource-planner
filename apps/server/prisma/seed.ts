@@ -107,6 +107,19 @@ const SEED_PROJECTS: SeedProjectSpec[] = [
       { skill: "C", hours: 44, row: 2, taskDeadlineOffsetWorkdays: 5, name: "DD-C" },
     ],
   },
+  {
+    code: "Z4",
+    name: "Z4 Testing Plant",
+    deadlineOffsetWorkdays: 60,
+    budgetHours: 400,
+    tasks: [
+      { skill: "P", hours: 60, row: 0, name: "CD-P" },
+      { skill: "A", hours: 50, row: 0, name: "CD-A" },
+      { skill: "S", hours: 60, row: 1, name: "BD-S" },
+      { skill: "E", hours: 40, row: 2, name: "DD-E" },
+      { skill: "C", hours: 40, row: 2, name: "DD-C" },
+    ],
+  },
 ];
 
 export async function runSeed(db: PrismaClient): Promise<void> {

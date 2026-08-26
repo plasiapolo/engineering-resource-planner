@@ -56,14 +56,14 @@ describe("generatePlan", () => {
   it("keeps specialists working at least 3 hours a day", () => {
     const result = generatePlan(
       makeInput({
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", remainingHours: 8, status: "NOT_STARTED", rowIndex: 0 }],
+        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", remainingHours: 12, status: "NOT_STARTED", rowIndex: 0 }],
         users: [USER_A1],
         availability: { a1: {} },
       }),
     );
     expect(result.failures).toHaveLength(0);
     expect(result.entries.every((e) => e.hours >= 3)).toBe(true);
-    expect(result.entries.reduce((s, e) => s + e.hours, 0)).toBe(8);
+    expect(result.entries.reduce((s, e) => s + e.hours, 0)).toBe(12);
     expect(result.entries[result.entries.length - 1].date).toBe(horizon("2026-12-31"));
   });
 

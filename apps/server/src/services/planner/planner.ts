@@ -237,6 +237,10 @@ function workingDaysBefore(date: DateString, count: number): DateString {
  * Computes the stretched start date and the daily hours a specialist should work
  * so the project fills the working window and ends exactly on the horizon, while
  * keeping at least 3 h per specialist per working day.
+ *
+ * The stretch is based on the actual pyramid structure: rows are scheduled
+ * sequentially (bottom-up), so the number of days used is the sum of each row's
+ * duration, and each task only uses the specialists of its own skill.
  */
 function computeProjectPace(
   tasks: PlannerTask[],
@@ -245,34 +249,55 @@ function computeProjectPace(
   horizon: DateString,
 ): { projectStart: DateString; dailyCap: number } {
   const totalHours = tasks.reduce((sum, t) => sum + t.remainingHours, 0);
-  const eligibleIds = new Set<string>();
-  for (const t of tasks) {
-    for (const u of users) {
-      if (u.skill === t.requiredSkill) eligibleIds.add(u.id);
-    }
-  }
-  const specialistCount = eligibleIds.size;
   const windowDays = workingDaysBetween(startDate, horizon).length;
-
-  if (totalHours <= 0 || specialistCount === 0 || windowDays <= 0) {
+  if (totalHours <= 0 || windowDays <= 0) {
     return { projectStart: startDate, dailyCap: DEFAULT_WORKING_HOURS };
   }
 
-  // Minimum days needed to fit the work at full capacity (8h per specialist).
-  const minDays = Math.ceil(totalHours / (DEFAULT_WORKING_HOURS * specialistCount));
-  // Maximum days while still giving every specialist at least 3h per day.
-  const maxDays = Math.floor(totalHours / (3 * specialistCount));
+  const specialistCountBySkill = new Map<string, number>();
+  for (const t of tasks) {
+    if (specialistCountBySkill.has(t.requiredSkill)) continue;
+    specialistCountBySkill.set(t.requiredSkill, users.filter((u) => u.skill === t.requiredSkill).length);
+  }
 
-  let days = Math.min(windowDays, Math.max(maxDays, 1));
-  if (days < minDays) days = minDays;
-  if (days > windowDays) days = windowDays;
-  days = Math.max(1, days);
+  const rows = new Map<number, PlannerTask[]>();
+  for (const t of tasks) {
+    const list = rows.get(t.rowIndex) ?? [];
+    list.push(t);
+    rows.set(t.rowIndex, list);
+  }
+  const rowKeys = [...rows.keys()].sort((a, b) => a - b);
+
+  const durationAtCap = (cap: number): number => {
+    let total = 0;
+    for (const row of rowKeys) {
+      let rowDays = 0;
+      for (const t of rows.get(row)!) {
+        const specialists = specialistCountBySkill.get(t.requiredSkill) ?? 0;
+        if (specialists <= 0) return Number.POSITIVE_INFINITY;
+        rowDays = Math.max(rowDays, Math.ceil(t.remainingHours / (specialists * cap)));
+      }
+      total += rowDays;
+    }
+    return total;
+  };
+
+  // Choose the smallest cap (most stretching) that still fits inside the window.
+  let chosenCap = DEFAULT_WORKING_HOURS;
+  let chosenDays = durationAtCap(DEFAULT_WORKING_HOURS);
+  for (let cap = 3; cap <= DEFAULT_WORKING_HOURS; cap += 1) {
+    const days = durationAtCap(cap);
+    if (days <= windowDays) {
+      chosenCap = cap;
+      chosenDays = days;
+      break;
+    }
+  }
+  if (!Number.isFinite(chosenDays) || chosenDays > windowDays) {
+    chosenDays = windowDays;
+  }
 
   const startList = workingDaysBetween(startDate, horizon);
-  const projectStart = startList[startList.length - days];
-
-  const rawCap = totalHours / (days * specialistCount);
-  const dailyCap = Math.min(DEFAULT_WORKING_HOURS, Math.max(3, Math.floor(rawCap)));
-
-  return { projectStart, dailyCap };
+  const projectStart = startList[Math.max(0, startList.length - chosenDays)];
+  return { projectStart, dailyCap: chosenCap };
 }
