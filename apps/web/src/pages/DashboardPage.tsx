@@ -172,6 +172,15 @@ export function DashboardPage() {
                 },
                 { key: "planned", header: "Planned", render: (m) => `${m.plannedHours}h` },
                 { key: "avail3mo", header: "Available hours within 3 months", render: (m) => `${m.availableHoursNext3Months}h` },
+                {
+                  key: "utilization",
+                  header: "Planned utilization",
+                  render: (m) => {
+                    const total = m.plannedHoursNext3Months + m.availableHoursNext3Months;
+                    const pct = total > 0 ? (m.plannedHoursNext3Months / total) * 100 : 0;
+                    return `${pct.toFixed(1)}%`;
+                  },
+                },
               ]}
             />
           </div>

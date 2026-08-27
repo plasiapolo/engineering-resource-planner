@@ -145,6 +145,7 @@ export interface ApiTeamMember {
   skill: SkillType | null;
   totalAvailabilityHours: number;
   plannedHours: number;
+  plannedHoursNext3Months: number;
   availableHours: number;
   availableHoursNext3Months: number;
 }

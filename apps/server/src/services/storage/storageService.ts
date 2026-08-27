@@ -196,6 +196,7 @@ export class StorageService {
         skill: u.skill,
         totalAvailabilityHours: availabilityHours,
         plannedHours: planned,
+        plannedHoursNext3Months: plannedInWindow(u.id),
         availableHours: Math.max(0, DEFAULT_WORKING_HOURS - planned),
         availableHoursNext3Months: Math.max(0, capacityFor(u.id) - plannedInWindow(u.id)),
       };
