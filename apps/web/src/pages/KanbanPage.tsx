@@ -86,6 +86,7 @@ function KanbanColumn({
 export function KanbanPage() {
   const { data, user, updateTaskUserStatus } = useAppState();
   const [active, setActive] = useState<ApiTask | null>(null);
+  const [activeCode, setActiveCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -125,12 +126,14 @@ export function KanbanPage() {
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    const taskId = String(event.active.id).split("|")[0];
+    const [taskId, code] = String(event.active.id).split("|");
+    setActiveCode(code);
     setActive(data.tasks.find((t) => t.id === taskId) ?? null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActive(null);
+    setActiveCode(null);
     const over = event.over;
     if (!over) return;
     const [taskId, code] = String(event.active.id).split("|");
@@ -157,7 +160,7 @@ export function KanbanPage() {
           <Alert tone="danger">{error}</Alert>
         </div>
       ) : null}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setActive(null)}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => { setActive(null); setActiveCode(null); }}>
         {data.projects.length === 0 ? (
           <Card>
             <EmptyState title="No projects" hint="Create a project first, then add tasks to see the Kanban board." />
@@ -195,11 +198,7 @@ export function KanbanPage() {
           {active ? (
             <div className={styles.kanbanCard}>
               <div className={styles.kanbanCardCode}>
-                {taskCodesForSkill(active, specialists).map((code) => (
-                  <span key={code} className={styles.kanbanCardCodeLine}>
-                    {code}
-                  </span>
-                ))}
+                <span className={styles.kanbanCardCodeLine}>{activeCode ?? active.codePart}</span>
                 {active.name ? <span className="muted">({active.name})</span> : null}
               </div>
               <div className={styles.kanbanCardMeta}>
