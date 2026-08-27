@@ -10,6 +10,7 @@ import { TaskFormModal } from "../components/tasks/TaskFormModal";
 import { AssignmentEditor } from "../components/tasks/AssignmentEditor";
 import { TASK_STATUS_LABELS } from "../domain/constants";
 import { taskCodesOf } from "../utils/taskCodes";
+import { formatDDMMYYYY } from "../utils/date";
 import styles from "./pages.module.css";
 
 export function TasksPage() {
@@ -91,6 +92,7 @@ export function TasksPage() {
             { key: "project", header: "Project", render: (t) => `${t.projectCode}` },
             { key: "projectName", header: "Project name", render: (t) => <strong>{t.projectName}</strong> },
             { key: "taskName", header: "Task name", render: (t) => (t.name ? <span>{t.name}</span> : <span className="muted">—</span>) },
+            { key: "taskDeadline", header: "Task deadline", render: (t) => (t.taskDeadline ? formatDDMMYYYY(t.taskDeadline) : <span className="muted">—</span>) },
             {
               key: "skill",
               header: "Skill",
