@@ -514,3 +514,17 @@
 .ganttBarAuto {
   background: var(--color-primary);
 }
+
+.workloadGroup {
+  margin-top: 10px;
+}
+
+.workloadSpecialistRow {
+  background: var(--color-surface-muted, #f5f7fa);
+}
+
+.workloadProjectCode {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  min-width: 28px;
+}

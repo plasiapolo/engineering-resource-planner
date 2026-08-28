@@ -129,7 +129,7 @@ export function GanttPage() {
   return (
     <div>
       <p className="page-subtitle">
-        Gantt chart for all tasks across all the projects period ({globalStart} → {globalEnd}).
+        Gantt chart for all tasks across all the projects period ({globalStart} → {globalEnd}). Orange boxes are manual assignments; blue are auto-generated. Box thickness reflects the hours worked that day.
       </p>
       {data.projects.length === 0 ? (
         <Card>

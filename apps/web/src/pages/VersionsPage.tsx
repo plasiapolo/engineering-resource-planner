@@ -175,7 +175,7 @@ export function VersionsPage() {
                         { key: "code", header: "Task code", render: (e) => <span className={styles.taskCode}>{e.taskCode.split(".")[0]}</span> },
                         { key: "user", header: "Specialist", render: (e) => e.userName },
                         { key: "hours", header: "Hours", render: (e) => `${e.hours}h` },
-                        { key: "lock", header: "", render: (e) => (e.locked ? <Badge tone="blue">manual</Badge> : <Badge tone="orange">auto</Badge>) },
+                        { key: "lock", header: "", render: (e) => (e.locked ? <Badge tone="orange">manual</Badge> : <Badge tone="blue">auto</Badge>) },
                       ]}
                     />
                   </div>

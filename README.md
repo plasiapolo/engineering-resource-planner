@@ -58,31 +58,38 @@ Password for every account: `<login>-Erp-2026!`
 ## Features
 
 **Project Manager (`pm`)**
-- Dashboard with project/task/conflict statistics and one-click plan generation.
+- Dashboard with project/task/conflict statistics, team-load table (incl. planned utilization) and one-click plan generation.
 - Projects: create, edit, soft-delete, budget vs. estimated hours.
 - Task pyramid: rows describe dependency order; dependencies are derived from the pyramid (sole source of truth). Task codes `XX-XX-X.XXXXXX` auto-maintain row/segment codes and a stable number per project.
-- Tasks: CRUD, skill requirement, hours, status transitions (incl. PM-only reopen of `DONE`), assignments to specialists.
-- Planner: automatic greedy scheduling across specialists by daily free capacity (only working days, weekend-free, Polish holidays). Manual (locked) entries are never modified; regeneration is idempotent (replaces auto entries, keeps locked ones).
-- Conflicts: budget, deadline, employee overload, no available employee, dependency violation, task deadline.
-- Versions: one immutable snapshot per business day (Europe/Warsaw), updated in place.
+- Tasks: CRUD, skill requirement, hours, status transitions (incl. PM-only reopen of `DONE`), assignments to specialists, task deadline.
+- Team: manage specialists (add/modify/delete), competence selection.
+- Planner: automatic scheduling across specialists by daily free capacity (only working days, weekend-free, Polish holidays). Manual (locked) entries are never modified; regeneration is idempotent (replaces auto entries, keeps locked ones).
+- Kanban: per-project boards (To do / On hold / Work in progress / Done) with drag & drop; each specialist manages their own task status independently; specialists can only move their own boxes.
+- Gantt: task bars per specialist with per-day boxes; box thickness reflects hours, orange = manual, blue = auto.
+- Workload: per-specialist rows with per-project subrows and per-day boxes (same colors as Gantt).
+- Conflicts: project deadline, project budget, unused budget, project schedule not satisfied, no available employee, dependency violation, employee overload, task deadline, pyramid row order.
+- Versions: one immutable snapshot per business day (Europe/Warsaw), updated in place; view snapshots and print to PDF.
 - Admin: reset database to seed, wipe all business data.
 
 **Specialists (`a1`…`p3`)**
-- My Tasks: own assignments only, status transitions (with hours worked), hours remaining.
+- My Tasks: own assignments only, status transitions (with hours worked), hours estimated/planned/available.
 - Availability: edit own availability; missing days default to 8h.
-- Planner and team views are read-only or hidden.
+- Kanban, Gantt and Workload views available (read-only or restricted to own boxes).
 
 ## Rules implemented
 
 - Missing availability for a day = 8 hours; weekends/holidays have 0.
-- A project must finish one working day before its deadline.
+- A project must finish **exactly 3 working days before its deadline**; the workload is stretched to fill the window and specialists work at least 3 hours per day (the project start is postponed if needed).
+- An **unused budget** conflict is reported when a project's planned hours are below its budget.
+- A **project schedule not satisfied** conflict is reported when a project has no work planned up to 3 working days before its deadline.
 - `DONE` and `ON_HOLD` tasks are excluded from automatic planning.
+- Manual (locked) assignments are shown in **orange**; auto-generated assignments in **blue** (Planner, Gantt, Workload).
 - Soft delete everywhere; audit log records key changes.
 
 ## Tests
 
 ```bash
-npm run test            # server unit tests (55)
+npm run test            # server unit tests (72)
 npm run test:integration # server integration tests (20) - uses erp_test database
 npm run test:e2e        # Playwright smoke tests (5) - builds server, provisions erp_test, starts test servers
 npm run typecheck

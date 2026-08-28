@@ -177,6 +177,7 @@ export type ViewKey =
   | "availability"
   | "kanban"
   | "gantt"
+  | "workload"
   | "conflicts"
   | "versions"
   | "myTasks";

@@ -11,6 +11,7 @@ import { PlannerPage } from "./pages/PlannerPage";
 import { AvailabilityPage } from "./pages/AvailabilityPage";
 import { KanbanPage } from "./pages/KanbanPage";
 import { GanttPage } from "./pages/GanttPage";
+import { WorkloadPage } from "./pages/WorkloadPage";
 import { ConflictsPage } from "./pages/ConflictsPage";
 import { VersionsPage } from "./pages/VersionsPage";
 import { SpecialistDashboardPage } from "./pages/SpecialistDashboardPage";
@@ -26,6 +27,7 @@ const PM_PAGES = {
   availability: AvailabilityPage,
   kanban: KanbanPage,
   gantt: GanttPage,
+  workload: WorkloadPage,
   conflicts: ConflictsPage,
   versions: VersionsPage,
 } as const;
@@ -38,6 +40,7 @@ const SPECIALIST_PAGES = {
   availability: AvailabilityPage,
   kanban: KanbanPage,
   gantt: GanttPage,
+  workload: WorkloadPage,
 } as const;
 
 export function App() {

@@ -18,6 +18,7 @@ const PM_NAV: NavItem[] = [
   { key: "availability", label: "Availability", icon: "◔" },
   { key: "kanban", label: "Kanban", icon: "▤" },
   { key: "gantt", label: "Gantt", icon: "▥" },
+  { key: "workload", label: "Workload", icon: "▦" },
   { key: "conflicts", label: "Conflicts", icon: "!" },
   { key: "versions", label: "Versions", icon: "⟲" },
 ];
@@ -30,6 +31,7 @@ const SPECIALIST_NAV: NavItem[] = [
   { key: "availability", label: "Availability", icon: "◔" },
   { key: "kanban", label: "Kanban", icon: "▤" },
   { key: "gantt", label: "Gantt", icon: "▥" },
+  { key: "workload", label: "Workload", icon: "▦" },
 ];
 
 export function Sidebar() {

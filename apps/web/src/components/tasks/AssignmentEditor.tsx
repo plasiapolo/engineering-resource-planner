@@ -206,7 +206,7 @@ export function AssignmentEditor({ task, onClose }: { task: ApiTask; onClose: ()
                   <>
                     <span>
                       {entry.date} · {entry.userName} · <strong>{entry.hours}h</strong>
-                      {entry.locked ? <Badge tone="blue">locked</Badge> : <Badge tone="orange">auto</Badge>}
+                      {entry.locked ? <Badge tone="orange">locked</Badge> : <Badge tone="blue">auto</Badge>}
                     </span>
                     <Button size="sm" variant="ghost" onClick={() => beginEdit(entry)}>
                       Edit
